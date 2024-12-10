@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新年烟花小程序</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2;
+        }
+        .message h1 {
+            font-size: 3rem;
+            margin: 0;
+            animation: glow 1.5s infinite alternate;
+        }
+        .countdown {
+            font-size: 2rem;
+            margin-top: 1rem;
+        }
+        @keyframes glow {
+            0% {
+                text-shadow: 0 0 10px #ff1461, 0 0 20px #ff1461, 0 0 30px #ff1461;
+            }
+            100% {
+                text-shadow: 0 0 20px #18ff92, 0 0 40px #18ff92, 0 0 60px #18ff92;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="message">
+        <h1>祝李志高新年快乐！</h1>
+        <div class="countdown" id="countdown">距离新年倒计时：</div>
+    </div>
+    <canvas id="fireworksCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("fireworksCanvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener("resize", () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        class Particle {
+            constructor(x, y, color, velocity) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.velocity = velocity;
+                this.alpha = 1;
+                this.gravity = 0.005;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update() {
+                this.velocity.y += this.gravity;
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                this.alpha -= 0.01;
+            }
+        }
+
+        class Firework {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.particles = [];
+                for (let i = 0; i < 50; i++) {
+                    this.particles.push(
+                        new Particle(this.x, this.y, this.color, {
+                            x: (Math.random() - 0.5) * 6,
+                            y: (Math.random() - 0.5) * 6,
+                        })
+                    );
+                }
+            }
+
+            draw() {
+                this.particles.forEach((particle) => particle.draw());
+            }
+
+            update() {
+                this.particles.forEach((particle, index) => {
+                    particle.update();
+                    if (particle.alpha <= 0) {
+                        this.particles.splice(index, 1);
+                    }
+                });
+            }
+        }
+
+        const fireworks = [];
+        const colors = ["#FF1461", "#18FF92", "#5A87FF", "#FBF38C"];
+
+        function createFirework() {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            fireworks.push(new Firework(x, y, color));
+        }
+
+        function animate() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            fireworks.forEach((firework, index) => {
+                firework.update();
+                firework.draw();
+                if (firework.particles.length === 0) {
+                    fireworks.splice(index, 1);
+                }
+            });
+            requestAnimationFrame(animate);
+        }
+
+        setInterval(createFirework, 800);
+        animate();
+
+        // 倒计时功能
+        function updateCountdown() {
+            const now = new Date();
+            const nextYear = now.getFullYear() + 1;
+            const newYear = new Date(`January 1, ${nextYear} 00:00:00`);
+            const diff = newYear - now;
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            const countdownElement = document.getElementById("countdown");
+            countdownElement.textContent = `距离新年倒计时：${days}天 ${hours}小时 ${minutes}分钟 ${seconds}秒`;
+
+            if (diff <= 0) {
+                countdownElement.textContent = "新年快乐！";
+                clearInterval(countdownInterval);
+            }
+        }
+
+        const countdownInterval = setInterval(updateCountdown, 1000);
+        updateCountdown();
+    </script>
+</body>
+</html>
